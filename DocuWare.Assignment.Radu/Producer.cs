@@ -15,7 +15,7 @@
                     {
                         var number = numberGenerator();
 
-                        await sequencer.PerformAsync(queue => queue.Add(number));
+                        await sequencer.PerformAsync(queue => queue.Enqueue(number));
                         await ApplyAlternatingDelay(cancellationToken);
                     }
                 }

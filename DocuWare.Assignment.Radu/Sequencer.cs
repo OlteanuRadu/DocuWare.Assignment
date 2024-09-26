@@ -5,9 +5,9 @@ namespace DocuWare.Assignment.Radu
     public class Sequencer
     {
         private const int MAX_ALLOWED_ITEMS = 20;
-        private List<int> _queue = [];
+        private ConcurrentQueue<int> _queue = [];
         private readonly Task? _workerTask;
-        private readonly ConcurrentQueue<Action<List<int>>> _requestsQueue = new();
+        private readonly ConcurrentQueue<Action<ConcurrentQueue<int>>> _requestsQueue = new();
 
         public Action<List<int>>? QueueChangedNotifier { get; set; }
 
@@ -19,13 +19,13 @@ namespace DocuWare.Assignment.Radu
                 {
                     while (!cancellationToken.IsCancellationRequested)
                     {
-                        if (_requestsQueue.TryDequeue(out Action<List<int>>? request))
+                        if (_requestsQueue.TryDequeue(out Action<ConcurrentQueue<int>>? request))
                         {
                             request(_queue);
 
-                            if (_queue.Count > MAX_ALLOWED_ITEMS)
+                            while (_queue.Count > MAX_ALLOWED_ITEMS)
                             {
-                                _queue = _queue.Skip(_queue.Count - MAX_ALLOWED_ITEMS).ToList();
+                                _queue.TryDequeue(out _);
                             }
 
                             QueueChangedNotifier?.Invoke(new List<int>(_queue));
@@ -56,7 +56,7 @@ namespace DocuWare.Assignment.Radu
             }
         }
 
-        public Task PerformAsync(Action<List<int>> action)
+        public Task PerformAsync(Action<ConcurrentQueue<int>> action)
         {
             var taskCompletionSource = new TaskCompletionSource<bool>();
 
